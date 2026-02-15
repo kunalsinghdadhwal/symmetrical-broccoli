@@ -1,0 +1,49 @@
+name: LLM Reliability Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e .
+
+      - name: Start API server
+        run: uvicorn src.api:app --host 0.0.0.0 --port 8000 &
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          ES_HOST: ${{ secrets.ES_HOST }}
+
+      - name: Wait for server startup
+        run: sleep 5
+
+      - name: Call evaluate endpoint
+        run: curl -s -X POST http://localhost:8000/evaluate -H "Content-Type: application/json" -d '{}' -o result.json
+
+      - name: Gate deployment on decision
+        run: |
+          DECISION=$(jq -r .decision result.json)
+          if [ "$DECISION" == "block" ]; then
+            echo "::error::LLM reliability gate BLOCKED deployment"
+            exit 1
+          elif [ "$DECISION" == "warn" ]; then
+            echo "::warning::LLM reliability gate raised warnings"
+          else
+            echo "Clean pass -- proceeding with deploy"
+          fi
