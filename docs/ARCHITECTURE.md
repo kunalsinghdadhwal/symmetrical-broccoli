@@ -91,14 +91,6 @@ graph TB
 
     I -->|result| B
     B -->|response| A
-
-    style A fill:#f9f9f9,stroke:#333
-    style B fill:#e1f5fe,stroke:#0277bd
-    style C fill:#fff3e0,stroke:#e65100
-    style J fill:#fce4ec,stroke:#c62828
-    style K fill:#fce4ec,stroke:#c62828
-    style L fill:#e8f5e9,stroke:#2e7d32
-    style M fill:#f3e5f5,stroke:#6a1b9a
 ```
 
 **Caption:** High-level component overview. The FastAPI backend receives evaluation requests and delegates to the Workflow Orchestrator. The orchestrator steps through six agents sequentially. Agents interact with AWS Bedrock (Claude for reasoning, Titan for embeddings), the target LLM under test, and Elasticsearch for evidence retrieval. Results flow back through FastAPI to the caller.
@@ -179,15 +171,6 @@ flowchart LR
     E --> F[Verdicts<br/><i>Supported / Unsupported</i>]
     F --> G[Score<br/><i>Risk Metric</i>]
     G --> H[Decision<br/><i>Deploy / Warn / Block</i>]
-
-    style A fill:#e3f2fd,stroke:#1565c0
-    style B fill:#e3f2fd,stroke:#1565c0
-    style C fill:#fff9c4,stroke:#f9a825
-    style D fill:#fff9c4,stroke:#f9a825
-    style E fill:#e8f5e9,stroke:#2e7d32
-    style F fill:#fce4ec,stroke:#c62828
-    style G fill:#fce4ec,stroke:#c62828
-    style H fill:#f3e5f5,stroke:#6a1b9a
 ```
 
 **Caption:** The evaluation pipeline. Blue stages involve generation (Claude). Yellow stages involve the target LLM and claim extraction. Green involves Elasticsearch retrieval. Red stages involve verification and scoring. Purple is the final output.
@@ -270,15 +253,6 @@ flowchart TD
     E --> F[verify_claims]
     F --> G[score_risk]
     G --> H[Return State]
-
-    style A fill:#e0e0e0,stroke:#616161
-    style H fill:#e0e0e0,stroke:#616161
-    style B fill:#bbdefb,stroke:#1565c0
-    style C fill:#c8e6c9,stroke:#2e7d32
-    style D fill:#bbdefb,stroke:#1565c0
-    style E fill:#c8e6c9,stroke:#2e7d32
-    style F fill:#bbdefb,stroke:#1565c0
-    style G fill:#fff9c4,stroke:#f9a825
 ```
 
 **Caption:** Workflow orchestrator execution order. Blue agents use Claude via Bedrock. Green agents interact with external systems (target LLM, Elasticsearch). Yellow is pure computation.
@@ -349,8 +323,6 @@ graph LR
     E -->|writes verdicts| S
     S -->|reads verdicts + config| F[score_risk]
     F -->|writes score| S
-
-    style S fill:#fff3e0,stroke:#e65100,stroke-width:2px
 ```
 
 **Caption:** Agent-state interaction pattern. Every agent reads from and writes to the shared state dictionary. Agents never communicate directly with each other.
@@ -626,10 +598,6 @@ flowchart LR
     C --> D[Chunk]
     D --> E[Embed<br/><i>Titan via Bedrock</i>]
     E --> F[Index<br/><i>Elasticsearch</i>]
-
-    style A fill:#e3f2fd,stroke:#1565c0
-    style E fill:#fce4ec,stroke:#c62828
-    style F fill:#e8f5e9,stroke:#2e7d32
 ```
 
 **Caption:** Documentation ingestion pipeline. Trusted documents are fetched, cleaned, chunked, embedded, and indexed into Elasticsearch before any evaluation runs.
@@ -774,8 +742,6 @@ graph TB
     DL --> ES
     TS --> ES
     TR --> ES
-
-    style ES fill:#e8f5e9,stroke:#2e7d32,stroke-width:3px
 ```
 
 **Caption:** Elasticsearch's four roles in the system. It serves as the evidence engine (search), shared memory (document storage), audit trail (logging), and historical tracker (trend analysis).
@@ -851,10 +817,6 @@ graph LR
     B -->|No| D{risk <= warn_threshold?}
     D -->|Yes| E["WARN<br/><i>Review recommended</i>"]
     D -->|No| F["BLOCK<br/><i>Deployment halted</i>"]
-
-    style C fill:#c8e6c9,stroke:#2e7d32
-    style E fill:#fff9c4,stroke:#f9a825
-    style F fill:#ffcdd2,stroke:#c62828
 ```
 
 **Caption:** Decision tree for the final evaluation outcome. The risk score is compared against two thresholds from the YAML config.
@@ -974,9 +936,6 @@ graph TD
     end
 
     S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
-
-    style S1 fill:#e0e0e0,stroke:#616161
-    style S7 fill:#c8e6c9,stroke:#2e7d32
 ```
 
 **Caption:** Progressive state accumulation through the pipeline. Each agent adds its key to the dictionary. By the end, the state contains the complete evaluation record.
