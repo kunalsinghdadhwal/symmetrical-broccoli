@@ -1,4 +1,4 @@
-.PHONY: dev test ingest
+.PHONY: dev test ingest lint format typecheck
 
 dev:
 	pip install -e ".[dev]"
@@ -8,3 +8,12 @@ test:
 
 ingest:
 	python -m src.ingest.pipeline
+
+lint:
+	ruff check src/ tests/
+
+format:
+	ruff format src/ tests/
+
+typecheck:
+	mypy src/
