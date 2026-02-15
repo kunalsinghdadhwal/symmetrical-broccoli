@@ -20,7 +20,7 @@ def call_target_llm(prompt: str, model_config: dict) -> str:
             model=model_config["model_id"],
             messages=[{"role": "user", "content": prompt}],
         )
-        return response.message.content
+        return response.message.content or ""
     else:
         raise ValueError(f"Unknown provider: {provider}")
 

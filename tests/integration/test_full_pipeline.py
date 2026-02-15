@@ -1,13 +1,11 @@
 """Integration tests for the full evaluation pipeline via API."""
 
-import pytest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
 from src.api import app
 from tests.integration.conftest import requires_elasticsearch, requires_ollama
-
 
 MOCK_CLAIMS_RESPONSE = (
     "1. Acme Corp allows returns within 30 days of purchase.\n"
@@ -16,6 +14,10 @@ MOCK_CLAIMS_RESPONSE = (
 )
 
 MOCK_VERIFY_SUPPORTED = "LABEL: supported\nJUSTIFICATION: Evidence confirms this."
+
+MOCK_PROMPTS_RESPONSE = (
+    "1. What is the return policy?\n2. What is the shipping cost?\n3. What is the warranty?"
+)
 
 
 @requires_elasticsearch
@@ -28,8 +30,10 @@ class TestFullPipeline:
 
     @patch("src.agents.verify_claims.call_llm", return_value=MOCK_VERIFY_SUPPORTED)
     @patch("src.agents.extract_claims.call_llm", return_value=MOCK_CLAIMS_RESPONSE)
-    @patch("src.agents.generate_prompts.call_llm", return_value="1. What is the return policy?\n2. What is the shipping cost?\n3. What is the warranty?")
-    def test_evaluate_returns_valid_response(self, mock_gen, mock_extract, mock_verify, ingest_fixtures):
+    @patch("src.agents.generate_prompts.call_llm", return_value=MOCK_PROMPTS_RESPONSE)
+    def test_evaluate_returns_valid_response(
+        self, mock_gen, mock_extract, mock_verify, ingest_fixtures
+    ):
         client = self._get_client()
         resp = client.post("/evaluate", json={"config_path": "tests/fixtures/test_config.yaml"})
         assert resp.status_code == 200

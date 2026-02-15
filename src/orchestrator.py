@@ -2,14 +2,15 @@
 
 import logging
 
-from src.agents.generate_prompts import generate_prompts
-from src.agents.run_model import run_model
 from src.agents.extract_claims import extract_claims
+from src.agents.generate_prompts import generate_prompts
 from src.agents.retrieve_evidence import retrieve_evidence
-from src.agents.verify_claims import verify_claims
+from src.agents.run_model import run_model
 from src.agents.score_risk import score_risk
+from src.agents.verify_claims import verify_claims
 
 logger = logging.getLogger(__name__)
+
 
 def run_workflow(state: dict) -> None:
     """Execute all agents in pipeline order."""

@@ -2,7 +2,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-
 MOCK_SEARCH_RESPONSE = {
     "hits": {
         "hits": [
@@ -43,9 +42,7 @@ def test_index_doc_calls_es_index(mock_es):
     body = {"content": "hello", "embedding": [0.1]}
     index_doc(index="my_index", doc_id="42", body=body)
 
-    mock_es.index.assert_called_once_with(
-        index="my_index", id="42", document=body
-    )
+    mock_es.index.assert_called_once_with(index="my_index", id="42", document=body)
 
 
 def test_search_docs_returns_source(mock_es):
@@ -127,5 +124,6 @@ def test_es_client_initialized_once_at_module_level():
     assert elasticsearch_helper.es is not None
     # Importing again should return the same module (same client instance)
     import importlib
+
     mod = importlib.import_module("src.wrappers.elasticsearch_helper")
     assert mod.es is elasticsearch_helper.es

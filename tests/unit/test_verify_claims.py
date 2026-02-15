@@ -1,11 +1,12 @@
 """Tests for verify_claims agent."""
 
-from unittest.mock import patch, call
+from unittest.mock import patch
 
 from src.agents.verify_claims import parse_verdict, verify_claims
 
-
-SUPPORTED_RESPONSE = "LABEL: supported\nJUSTIFICATION: The evidence directly confirms the 30-day return policy."
+SUPPORTED_RESPONSE = (
+    "LABEL: supported\nJUSTIFICATION: The evidence directly confirms the 30-day return policy."
+)
 UNSUPPORTED_RESPONSE = "LABEL: unsupported\nJUSTIFICATION: No evidence mentions this pricing."
 WEAKLY_RESPONSE = "LABEL: weakly_supported\nJUSTIFICATION: Evidence partially addresses the claim."
 
@@ -28,11 +29,11 @@ class TestParseVerdict:
         assert "30-day" in justification
 
     def test_unsupported(self):
-        label, justification = parse_verdict(UNSUPPORTED_RESPONSE)
+        label, _justification = parse_verdict(UNSUPPORTED_RESPONSE)
         assert label == "unsupported"
 
     def test_weakly_supported(self):
-        label, justification = parse_verdict(WEAKLY_RESPONSE)
+        label, _justification = parse_verdict(WEAKLY_RESPONSE)
         assert label == "weakly_supported"
 
     def test_malformed_response(self):

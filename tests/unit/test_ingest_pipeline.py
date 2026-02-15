@@ -1,8 +1,10 @@
 """Tests for doc ingest pipeline."""
 
-from unittest.mock import patch, call
+from unittest.mock import patch
 
-from src.ingest.pipeline import clean_text, chunk_text, run_ingest
+import pytest
+
+from src.ingest.pipeline import chunk_text, clean_text, run_ingest
 
 
 class TestCleanText:
@@ -101,7 +103,6 @@ class TestRunIngest:
             "elasticsearch": {"index": "idx"},
             "doc_sources": [{"type": "local", "path": "/nonexistent/path"}],
         }
-        import pytest
         with pytest.raises(FileNotFoundError):
             run_ingest("dummy.yaml")
 
@@ -111,7 +112,6 @@ class TestRunIngest:
             "elasticsearch": {"index": "idx"},
             "doc_sources": [{"type": "s3", "bucket": "my-bucket"}],
         }
-        import pytest
         with pytest.raises(NotImplementedError):
             run_ingest("dummy.yaml")
 
@@ -139,7 +139,6 @@ class TestRunIngest:
             "elasticsearch": {"index": "idx"},
             "doc_sources": [{"type": "unknown"}],
         }
-        import pytest
         with pytest.raises(ValueError, match="Unknown source type"):
             run_ingest("dummy.yaml")
 
@@ -162,7 +161,9 @@ class TestRunIngest:
     @patch("src.ingest.pipeline.index_doc")
     @patch("src.ingest.pipeline.embed", return_value=[0.1])
     @patch("src.ingest.pipeline.load_config")
-    def test_index_doc_receives_content_and_embedding(self, mock_config, mock_embed, mock_index, tmp_path):
+    def test_index_doc_receives_content_and_embedding(
+        self, mock_config, mock_embed, mock_index, tmp_path
+    ):
         doc_dir = tmp_path / "docs"
         doc_dir.mkdir()
         (doc_dir / "file.txt").write_text("test content")

@@ -1,6 +1,9 @@
+"""Elasticsearch helper -- keyword and vector search against trusted docs."""
+
 import os
 
 from elasticsearch import Elasticsearch
+
 from src.wrappers.bedrock import embed
 
 _hosts = [os.environ.get("ES_HOST", "http://localhost:9200")]

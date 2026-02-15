@@ -47,7 +47,7 @@ def load_config(path: str | None = None) -> dict:
     if not file_path.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
 
-    with open(file_path, "r") as fh:
+    with open(file_path) as fh:
         cfg = yaml.safe_load(fh)
 
     _check_required(cfg)

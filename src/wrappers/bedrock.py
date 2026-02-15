@@ -13,9 +13,7 @@ _client = boto3.client(
 
 def call_llm(prompt: str, system: str = "") -> str:
     """Call Claude via the Converse API and return the assistant text."""
-    model_id = os.environ.get(
-        "BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0"
-    )
+    model_id = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0")
 
     kwargs: dict = {
         "modelId": model_id,
@@ -27,7 +25,7 @@ def call_llm(prompt: str, system: str = "") -> str:
         kwargs["system"] = [{"text": system}]
 
     response = _client.converse(**kwargs)
-    return response["output"]["message"]["content"][0]["text"]
+    return response["output"]["message"]["content"][0]["text"]  # type: ignore[no-any-return]
 
 
 def embed(text: str) -> list[float]:
@@ -40,4 +38,4 @@ def embed(text: str) -> list[float]:
         accept="application/json",
         contentType="application/json",
     )
-    return json.loads(response["body"].read())["embedding"]
+    return json.loads(response["body"].read())["embedding"]  # type: ignore[no-any-return]

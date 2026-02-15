@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 
 from src.api import app
 
-
 client = TestClient(app)
 
 MODULE = "src.api"
@@ -46,8 +45,15 @@ class TestEvaluate:
     def test_response_has_all_expected_keys(self, mock_config, mock_workflow):
         resp = client.post("/evaluate", json={"config_path": "test.yaml"})
         body = resp.json()
-        expected_keys = {"score", "decision", "total_claims", "supported",
-                         "unsupported", "weakly_supported", "details"}
+        expected_keys = {
+            "score",
+            "decision",
+            "total_claims",
+            "supported",
+            "unsupported",
+            "weakly_supported",
+            "details",
+        }
         assert set(body.keys()) == expected_keys
 
     @patch(f"{MODULE}.load_config", side_effect=ValueError("bad config"))

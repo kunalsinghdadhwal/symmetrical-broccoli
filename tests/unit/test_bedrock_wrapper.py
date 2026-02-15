@@ -4,17 +4,12 @@ import importlib
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
 CONVERSE_RESPONSE = {
-    "output": {
-        "message": {"content": [{"text": "mocked response"}]}
-    },
+    "output": {"message": {"content": [{"text": "mocked response"}]}},
     "usage": {"inputTokens": 10, "outputTokens": 5, "totalTokens": 15},
     "stopReason": "end_turn",
 }
@@ -119,6 +114,4 @@ class TestModuleLevelClient:
             import src.wrappers.bedrock as bedrock_mod
 
             importlib.reload(bedrock_mod)
-            mock_boto_client.assert_called_once_with(
-                "bedrock-runtime", region_name="us-east-1"
-            )
+            mock_boto_client.assert_called_once_with("bedrock-runtime", region_name="us-east-1")

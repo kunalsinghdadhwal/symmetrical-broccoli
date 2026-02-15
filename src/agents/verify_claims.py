@@ -54,26 +54,27 @@ def verify_claims(state: dict) -> None:
         documents = entry["documents"]
 
         if not documents:
-            verdicts.append({
-                "claim": claim["text"],
-                "label": "unsupported",
-                "justification": "No evidence documents found.",
-            })
+            verdicts.append(
+                {
+                    "claim": claim["text"],
+                    "label": "unsupported",
+                    "justification": "No evidence documents found.",
+                }
+            )
             continue
 
         evidence_text = "\n\n".join(doc["content"] for doc in documents)
-        prompt = (
-            f"Claim: {claim['text']}\n\n"
-            f"Evidence:\n{evidence_text}"
-        )
+        prompt = f"Claim: {claim['text']}\n\nEvidence:\n{evidence_text}"
 
         response = call_llm(prompt, system=SYSTEM_PROMPT)
         label, justification = parse_verdict(response)
 
-        verdicts.append({
-            "claim": claim["text"],
-            "label": label,
-            "justification": justification,
-        })
+        verdicts.append(
+            {
+                "claim": claim["text"],
+                "label": label,
+                "justification": justification,
+            }
+        )
 
     state["verdicts"] = verdicts

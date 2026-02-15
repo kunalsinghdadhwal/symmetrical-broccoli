@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from src.config.loader import load_config
-from src.orchestrator import run_workflow, build_response
+from src.orchestrator import build_response, run_workflow
 
 logger = logging.getLogger(__name__)
 
@@ -30,17 +30,17 @@ class EvaluateResponse(BaseModel):
 
 
 @app.exception_handler(ValueError)
-async def value_error_handler(request: Request, exc: ValueError):
+async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
 @app.exception_handler(FileNotFoundError)
-async def file_not_found_handler(request: Request, exc: FileNotFoundError):
+async def file_not_found_handler(request: Request, exc: FileNotFoundError) -> JSONResponse:
     return JSONResponse(status_code=404, content={"detail": str(exc)})
 
 
 @app.post("/evaluate", response_model=EvaluateResponse)
-async def evaluate(request: EvaluateRequest):
+async def evaluate(request: EvaluateRequest) -> EvaluateResponse:
     request_id = str(uuid4())
     logger.info("request_id=%s Starting evaluation", request_id)
 
@@ -50,9 +50,9 @@ async def evaluate(request: EvaluateRequest):
     result = build_response(state)
 
     logger.info("request_id=%s Evaluation complete, decision=%s", request_id, result["decision"])
-    return result
+    return EvaluateResponse(**result)
 
 
 @app.get("/health")
-async def health():
+async def health() -> dict[str, str]:
     return {"status": "ok"}

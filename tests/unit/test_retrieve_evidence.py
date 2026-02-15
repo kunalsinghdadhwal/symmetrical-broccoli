@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 from src.agents.retrieve_evidence import deduplicate, retrieve_evidence
 
-
 KEYWORD_RESULTS = [{"content": "doc A"}, {"content": "doc B"}]
 VECTOR_RESULTS = [{"content": "doc B"}, {"content": "doc C"}]
 

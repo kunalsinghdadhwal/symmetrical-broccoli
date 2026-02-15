@@ -6,7 +6,7 @@ from src.agents.score_risk import score_risk
 def _make_state(labels, deploy=0.10, warn=0.25):
     """Build a minimal state dict for testing."""
     return {
-        "verdicts": [{"label": l} for l in labels],
+        "verdicts": [{"label": label} for label in labels],
         "config": {"thresholds": {"deploy": deploy, "warn": warn}},
     }
 
@@ -25,9 +25,7 @@ class TestScoreRisk:
         assert state["score"]["decision"] == "block"
 
     def test_all_weakly_supported(self):
-        state = _make_state(
-            ["weakly_supported"] * 4, deploy=0.10, warn=0.25
-        )
+        state = _make_state(["weakly_supported"] * 4, deploy=0.10, warn=0.25)
         score_risk(state)
         assert state["score"]["risk"] == 0.5
         assert state["score"]["decision"] == "block"
@@ -67,7 +65,11 @@ class TestScoreRisk:
         state = _make_state(["supported", "unsupported"])
         score_risk(state)
         expected_keys = {
-            "risk", "decision", "total_claims",
-            "supported", "weakly_supported", "unsupported",
+            "risk",
+            "decision",
+            "total_claims",
+            "supported",
+            "weakly_supported",
+            "unsupported",
         }
         assert set(state["score"].keys()) == expected_keys

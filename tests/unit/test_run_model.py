@@ -34,11 +34,11 @@ class TestCallTargetLlm:
         with patch.dict(sys.modules, {"ollama": mock_ollama_module}):
             # Need to reimport to pick up the mocked module
             import importlib
+
             import src.agents.run_model as mod
+
             importlib.reload(mod)
-            result = mod.call_target_llm(
-                "hello", {"provider": "ollama", "model_id": "llama3"}
-            )
+            result = mod.call_target_llm("hello", {"provider": "ollama", "model_id": "llama3"})
 
         assert result == "ollama response"
         mock_client_instance.chat.assert_called_once_with(
@@ -48,6 +48,7 @@ class TestCallTargetLlm:
 
     def test_unknown_provider_raises(self):
         import pytest
+
         with pytest.raises(ValueError, match="Unknown provider: foobar"):
             call_target_llm("hello", {"provider": "foobar", "model_id": "x"})
 

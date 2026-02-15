@@ -1,5 +1,6 @@
 """Shared fixtures for integration tests."""
 
+import contextlib
 import hashlib
 import time
 
@@ -41,29 +42,31 @@ requires_ollama = pytest.mark.skipif(
 def _fake_embed(text):
     """Hash-based fake embedding to avoid requiring AWS Bedrock for Titan."""
     h = hashlib.sha256(text.encode("utf-8")).hexdigest()
-    return [int(h[i:i+2], 16) / 255.0 for i in range(0, 512, 2)]
+    return [int(h[i : i + 2], 16) / 255.0 for i in range(0, 512, 2)]
 
 
 @pytest.fixture(scope="session", autouse=True)
 def _patch_embed():
     """Replace real embed with hash-based fake for all integration tests."""
     from unittest.mock import patch
-    with patch("src.ingest.pipeline.embed", side_effect=_fake_embed):
-        with patch("src.wrappers.elasticsearch_helper.embed", side_effect=_fake_embed):
-            yield
+
+    with (
+        patch("src.ingest.pipeline.embed", side_effect=_fake_embed),
+        patch("src.wrappers.elasticsearch_helper.embed", side_effect=_fake_embed),
+    ):
+        yield
 
 
 @pytest.fixture(scope="session")
 def es_client():
     """Return an Elasticsearch client connected to localhost."""
     from elasticsearch import Elasticsearch
+
     client = Elasticsearch("http://localhost:9200")
     yield client
     # Cleanup: delete test index
-    try:
+    with contextlib.suppress(Exception):
         client.indices.delete(index="test_trusted_docs", ignore_unavailable=True)
-    except Exception:
-        pass
 
 
 @pytest.fixture(scope="session")

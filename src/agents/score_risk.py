@@ -14,12 +14,8 @@ def score_risk(state: dict) -> None:
         weakly_count = 0
         supported_count = 0
     else:
-        unsupported_count = sum(
-            1 for v in verdicts if v["label"] == "unsupported"
-        )
-        weakly_count = sum(
-            1 for v in verdicts if v["label"] == "weakly_supported"
-        )
+        unsupported_count = sum(1 for v in verdicts if v["label"] == "unsupported")
+        weakly_count = sum(1 for v in verdicts if v["label"] == "weakly_supported")
         supported_count = total - unsupported_count - weakly_count
         risk = (unsupported_count * 1.0 + weakly_count * 0.5) / total
 

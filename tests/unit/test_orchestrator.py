@@ -1,10 +1,10 @@
 """Tests for workflow orchestrator."""
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
-from src.orchestrator import run_workflow, build_response
-
+from src.orchestrator import build_response, run_workflow
 
 MODULE = "src.orchestrator"
 
@@ -20,7 +20,7 @@ AGENT_NAMES = [
 
 def _name_mocks(mocks, names):
     """Set __name__ on each mock so the orchestrator can log it."""
-    for mock, name in zip(mocks, names):
+    for mock, name in zip(mocks, names, strict=True):
         mock.__name__ = name
 
 
@@ -63,11 +63,13 @@ class TestRunWorkflow:
     @patch(f"{MODULE}.extract_claims")
     @patch(f"{MODULE}.run_model")
     @patch(f"{MODULE}.generate_prompts")
-    def test_exception_stops_pipeline(self, mock_gen, mock_run, mock_extract,
-                                      mock_retrieve, mock_verify, mock_score):
+    def test_exception_stops_pipeline(
+        self, mock_gen, mock_run, mock_extract, mock_retrieve, mock_verify, mock_score
+    ):
         for mock, name in zip(
             [mock_gen, mock_run, mock_extract, mock_retrieve, mock_verify, mock_score],
             AGENT_NAMES,
+            strict=True,
         ):
             mock.__name__ = name
 
@@ -147,6 +149,13 @@ class TestBuildResponse:
             "verdicts": [],
         }
         result = build_response(state)
-        expected_keys = {"score", "decision", "total_claims", "supported",
-                         "unsupported", "weakly_supported", "details"}
+        expected_keys = {
+            "score",
+            "decision",
+            "total_claims",
+            "supported",
+            "unsupported",
+            "weakly_supported",
+            "details",
+        }
         assert set(result.keys()) == expected_keys

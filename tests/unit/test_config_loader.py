@@ -1,6 +1,5 @@
 """Tests for src.config.loader.load_config."""
 
-import os
 import textwrap
 
 import pytest
@@ -57,7 +56,7 @@ def test_missing_deploy_threshold_raises_value_error(tmp_path):
     yaml_content = VALID_YAML.replace("  deploy_threshold: 0.10\n", "")
     path = _write(tmp_path, yaml_content)
 
-    with pytest.raises(ValueError, match="risk_tolerance.deploy_threshold"):
+    with pytest.raises(ValueError, match=r"risk_tolerance\.deploy_threshold"):
         load_config(path)
 
 
@@ -87,17 +86,15 @@ def test_missing_model_provider_raises_value_error(tmp_path):
     yaml_content = VALID_YAML.replace("  provider: bedrock\n", "")
     path = _write(tmp_path, yaml_content)
 
-    with pytest.raises(ValueError, match="model.provider"):
+    with pytest.raises(ValueError, match=r"model\.provider"):
         load_config(path)
 
 
 def test_missing_model_id_raises_value_error(tmp_path):
-    yaml_content = VALID_YAML.replace(
-        '  model_id: "anthropic.claude-3-sonnet-20240229-v1:0"\n', ""
-    )
+    yaml_content = VALID_YAML.replace('  model_id: "anthropic.claude-3-sonnet-20240229-v1:0"\n', "")
     path = _write(tmp_path, yaml_content)
 
-    with pytest.raises(ValueError, match="model.model_id"):
+    with pytest.raises(ValueError, match=r"model\.model_id"):
         load_config(path)
 
 
@@ -105,7 +102,7 @@ def test_missing_elasticsearch_host_raises_value_error(tmp_path):
     yaml_content = VALID_YAML.replace('  host: "http://localhost:9200"\n', "")
     path = _write(tmp_path, yaml_content)
 
-    with pytest.raises(ValueError, match="elasticsearch.host"):
+    with pytest.raises(ValueError, match=r"elasticsearch\.host"):
         load_config(path)
 
 
@@ -113,14 +110,12 @@ def test_missing_elasticsearch_index_raises_value_error(tmp_path):
     yaml_content = VALID_YAML.replace('  index: "trusted_docs"\n', "")
     path = _write(tmp_path, yaml_content)
 
-    with pytest.raises(ValueError, match="elasticsearch.index"):
+    with pytest.raises(ValueError, match=r"elasticsearch\.index"):
         load_config(path)
 
 
 def test_missing_doc_sources_raises_value_error(tmp_path):
-    yaml_content = VALID_YAML.replace(
-        "doc_sources:\n  - type: local\n    path: ./docs/\n", ""
-    )
+    yaml_content = VALID_YAML.replace("doc_sources:\n  - type: local\n    path: ./docs/\n", "")
     path = _write(tmp_path, yaml_content)
 
     with pytest.raises(ValueError, match="doc_sources"):
@@ -131,7 +126,7 @@ def test_missing_warn_threshold_raises_value_error(tmp_path):
     yaml_content = VALID_YAML.replace("  warn_threshold: 0.25\n", "")
     path = _write(tmp_path, yaml_content)
 
-    with pytest.raises(ValueError, match="risk_tolerance.warn_threshold"):
+    with pytest.raises(ValueError, match=r"risk_tolerance\.warn_threshold"):
         load_config(path)
 
 

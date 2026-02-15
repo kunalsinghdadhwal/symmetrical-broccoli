@@ -38,19 +38,18 @@ def extract_claims(state: dict) -> None:
         prompt_text = entry["prompt"]
         response_text = entry["response"]
 
-        prompt = (
-            "Extract all atomic factual claims from the following text:\n\n"
-            f"{response_text}"
-        )
+        prompt = f"Extract all atomic factual claims from the following text:\n\n{response_text}"
 
         llm_response = call_llm(prompt, system=SYSTEM_PROMPT)
         claims = parse_claims(llm_response)
 
         for claim_text in claims:
-            all_claims.append({
-                "text": claim_text,
-                "source_prompt": prompt_text,
-                "source_response": response_text,
-            })
+            all_claims.append(
+                {
+                    "text": claim_text,
+                    "source_prompt": prompt_text,
+                    "source_response": response_text,
+                }
+            )
 
     state["claims"] = all_claims

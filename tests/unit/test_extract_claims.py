@@ -4,10 +4,8 @@ from unittest.mock import patch
 
 from src.agents.extract_claims import extract_claims, parse_claims
 
-
 CLAIMS_RESPONSE = (
-    "1. The return policy allows returns within 30 days.\n"
-    "2. Shipping is free for orders over $50."
+    "1. The return policy allows returns within 30 days.\n2. Shipping is free for orders over $50."
 )
 
 

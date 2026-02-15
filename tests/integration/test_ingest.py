@@ -1,7 +1,5 @@
 """Integration tests for document ingestion pipeline."""
 
-import pytest
-
 from tests.integration.conftest import requires_elasticsearch, requires_ollama
 
 
