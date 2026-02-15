@@ -1,0 +1,46 @@
+"""Workflow orchestrator -- wires all agents into a sequential pipeline."""
+
+import logging
+
+from src.agents.generate_prompts import generate_prompts
+from src.agents.run_model import run_model
+from src.agents.extract_claims import extract_claims
+from src.agents.retrieve_evidence import retrieve_evidence
+from src.agents.verify_claims import verify_claims
+from src.agents.score_risk import score_risk
+
+logger = logging.getLogger(__name__)
+
+def run_workflow(state: dict) -> None:
+    """Execute all agents in pipeline order."""
+    agents = [
+        generate_prompts,
+        run_model,
+        extract_claims,
+        retrieve_evidence,
+        verify_claims,
+        score_risk,
+    ]
+    for agent in agents:
+        name = agent.__name__
+        logger.info("Starting %s", name)
+        try:
+            agent(state)
+        except Exception as exc:
+            logger.error("Failed in %s: %s", name, exc)
+            raise
+        logger.info("Completed %s", name)
+
+
+def build_response(state: dict) -> dict:
+    """Extract a clean response dict from the final state."""
+    score = state["score"]
+    return {
+        "score": score["risk"],
+        "decision": score["decision"],
+        "total_claims": score["total_claims"],
+        "supported": score["supported"],
+        "unsupported": score["unsupported"],
+        "weakly_supported": score["weakly_supported"],
+        "details": state.get("verdicts", []),
+    }
