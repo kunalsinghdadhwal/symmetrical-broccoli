@@ -6,13 +6,22 @@ from uuid import uuid4
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from scalar_fastapi import get_scalar_api_reference
 
 from src.config.loader import load_config
 from src.orchestrator import build_response, run_workflow
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="LLM Reliability Gate")
+app = FastAPI(title="LLM Reliability Gate", docs_url=None)
+
+
+@app.get("/docs", include_in_schema=False)
+async def scalar_docs():
+    return get_scalar_api_reference(
+        openapi_url=app.openapi_url,
+        title="LLM Reliability Gate",
+    )
 
 
 class EvaluateRequest(BaseModel):

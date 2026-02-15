@@ -10,7 +10,7 @@ doc_sources:
     path: ./docs/policies/
 model:
   provider: bedrock
-  model_id: "anthropic.claude-3-sonnet-20240229-v1:0"
+  model_id: "apac.anthropic.claude-sonnet-4-20250514-v1:0"
 elasticsearch:
   host: "http://localhost:9200"
   index: "trusted_docs"
