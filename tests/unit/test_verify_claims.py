@@ -130,3 +130,10 @@ class TestVerifyClaims:
         prompt_arg = mock_llm.call_args[0][0]
         assert "doc part 1" in prompt_arg
         assert "doc part 2" in prompt_arg
+
+    @patch("src.agents.verify_claims.call_llm")
+    def test_empty_evidence_no_llm_call(self, mock_llm):
+        state = _make_state([])
+        verify_claims(state)
+        assert state["verdicts"] == []
+        mock_llm.assert_not_called()

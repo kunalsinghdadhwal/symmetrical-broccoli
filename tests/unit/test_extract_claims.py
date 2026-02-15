@@ -38,6 +38,12 @@ class TestParseClaims:
         result = parse_claims("1. First\n\n2. Second\n\n")
         assert len(result) == 2
 
+    def test_parenthesis_numbering(self):
+        result = parse_claims("1) First claim\n2) Second claim")
+        assert len(result) == 2
+        assert result[0] == "First claim"
+        assert result[1] == "Second claim"
+
 
 class TestExtractClaims:
     @patch("src.agents.extract_claims.call_llm", return_value=CLAIMS_RESPONSE)
@@ -95,6 +101,13 @@ class TestExtractClaims:
         }
         extract_claims(state)
         assert mock_llm.call_count == 2
+
+    @patch("src.agents.extract_claims.call_llm")
+    def test_empty_responses_no_llm_call(self, mock_llm):
+        state = {"responses": []}
+        extract_claims(state)
+        assert state["claims"] == []
+        mock_llm.assert_not_called()
 
     @patch(
         "src.agents.extract_claims.call_llm",

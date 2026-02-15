@@ -22,6 +22,9 @@ class TestCleanText:
         result = clean_text("<div>  hello   <span>world</span>  </div>")
         assert result == "hello world"
 
+    def test_empty_string_returns_empty(self):
+        assert clean_text("") == ""
+
 
 class TestChunkText:
     def test_single_chunk_short_text(self):
@@ -129,6 +132,32 @@ class TestRunIngest:
 
         result = run_ingest("dummy.yaml")
         assert result["documents_processed"] == 2
+
+    @patch("src.ingest.pipeline.load_config")
+    def test_unknown_source_type_raises_value_error(self, mock_config):
+        mock_config.return_value = {
+            "elasticsearch": {"index": "idx"},
+            "doc_sources": [{"type": "unknown"}],
+        }
+        import pytest
+        with pytest.raises(ValueError, match="Unknown source type"):
+            run_ingest("dummy.yaml")
+
+    @patch("src.ingest.pipeline.index_doc")
+    @patch("src.ingest.pipeline.embed", return_value=[0.1])
+    @patch("src.ingest.pipeline.load_config")
+    def test_empty_directory_produces_zero(self, mock_config, mock_embed, mock_index, tmp_path):
+        doc_dir = tmp_path / "empty_docs"
+        doc_dir.mkdir()
+
+        mock_config.return_value = {
+            "elasticsearch": {"index": "idx"},
+            "doc_sources": [{"type": "local", "path": str(doc_dir)}],
+        }
+
+        result = run_ingest("dummy.yaml")
+        assert result["documents_processed"] == 0
+        assert result["chunks_indexed"] == 0
 
     @patch("src.ingest.pipeline.index_doc")
     @patch("src.ingest.pipeline.embed", return_value=[0.1])

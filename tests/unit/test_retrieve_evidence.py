@@ -97,3 +97,12 @@ class TestRetrieveEvidence:
         state = _make_state([claim])
         retrieve_evidence(state)
         assert state["evidence"][0]["claim"] is claim
+
+    @patch("src.agents.retrieve_evidence.vector_search")
+    @patch("src.agents.retrieve_evidence.search_docs")
+    def test_empty_claims_no_search_calls(self, mock_keyword, mock_vector):
+        state = _make_state([])
+        retrieve_evidence(state)
+        assert state["evidence"] == []
+        mock_keyword.assert_not_called()
+        mock_vector.assert_not_called()
