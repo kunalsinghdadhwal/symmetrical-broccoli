@@ -1,6 +1,6 @@
 # LLM Reliability Gate
 
-**Demo:** [GitHub Actions Runs](https://github.com/kunalsinghdadhwal/llm-reliability-test/actions) | [Example Successful Run](https://github.com/kunalsinghdadhwal/llm-reliability-test/actions/runs/22034413683)
+> **Live Demo** -- **[GitHub Actions Runs](https://github.com/kunalsinghdadhwal/llm-reliability-test/actions)** | **[Example Successful Run](https://github.com/kunalsinghdadhwal/llm-reliability-test/actions/runs/22034413683)**
 
 A hallucination detection and scoring system for Large Language Models. It treats LLM output as untrusted input, extracts factual claims, retrieves evidence from pre-indexed trusted documentation, and produces a risk score with a deploy/warn/block decision.
 
