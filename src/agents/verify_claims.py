@@ -44,6 +44,13 @@ def parse_verdict(response: str) -> tuple[str, str]:
     return (label, justification)
 
 
+_CONFIDENCE_MAP = {
+    "supported": 1.0,
+    "weakly_supported": 0.5,
+    "unsupported": 0.0,
+}
+
+
 def verify_claims(state: dict) -> None:
     """Verify each claim against its retrieved evidence documents."""
     evidence_entries = state["evidence"]
@@ -57,8 +64,9 @@ def verify_claims(state: dict) -> None:
             verdicts.append(
                 {
                     "claim": claim["text"],
-                    "label": "unsupported",
-                    "justification": "No evidence documents found.",
+                    "verdict": "unsupported",
+                    "evidence_snippet": "",
+                    "confidence": 0.0,
                 }
             )
             continue
@@ -67,13 +75,16 @@ def verify_claims(state: dict) -> None:
         prompt = f"Claim: {claim['text']}\n\nEvidence:\n{evidence_text}"
 
         response = call_llm(prompt, system=SYSTEM_PROMPT)
-        label, justification = parse_verdict(response)
+        label, _justification = parse_verdict(response)
+
+        snippet = documents[0]["content"][:200] if documents else ""
 
         verdicts.append(
             {
                 "claim": claim["text"],
-                "label": label,
-                "justification": justification,
+                "verdict": label,
+                "evidence_snippet": snippet,
+                "confidence": _CONFIDENCE_MAP.get(label, 0.0),
             }
         )
 

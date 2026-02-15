@@ -11,8 +11,9 @@ client = TestClient(app)
 MODULE = "src.api"
 
 MOCK_SCORE = {
-    "risk": 0.25,
-    "decision": "warn",
+    "hallucination_risk": 0.25,
+    "reliability_score": 0.75,
+    "decision": "approve",
     "total_claims": 10,
     "supported": 6,
     "unsupported": 2,
@@ -20,7 +21,7 @@ MOCK_SCORE = {
 }
 
 MOCK_VERDICTS = [
-    {"claim": "test claim", "label": "supported", "justification": "ok"},
+    {"claim": "test claim", "verdict": "supported", "evidence_snippet": "ev", "confidence": 1.0},
 ]
 
 
@@ -31,28 +32,42 @@ def _setup_workflow_side_effect(state):
 
 
 class TestEvaluate:
+    @patch(f"{MODULE}.index_doc")
     @patch(f"{MODULE}.run_workflow", side_effect=_setup_workflow_side_effect)
-    @patch(f"{MODULE}.load_config", return_value={"use_case": "test"})
-    def test_returns_200_with_valid_response(self, mock_config, mock_workflow):
+    @patch(
+        f"{MODULE}.load_config",
+        return_value={"use_case": "test", "model": {"provider": "bedrock"}},
+    )
+    def test_returns_200_with_valid_response(self, mock_config, mock_workflow, mock_index):
         resp = client.post("/evaluate", json={"config_path": "test.yaml"})
         assert resp.status_code == 200
         body = resp.json()
-        assert body["score"] == 0.25
-        assert body["decision"] == "warn"
+        assert body["hallucination_risk"] == 0.25
+        assert body["reliability_score"] == 0.75
+        assert body["decision"] == "approve"
+        assert body["model_under_test"] == "bedrock"
+        assert "run_id" in body
 
+    @patch(f"{MODULE}.index_doc")
     @patch(f"{MODULE}.run_workflow", side_effect=_setup_workflow_side_effect)
-    @patch(f"{MODULE}.load_config", return_value={"use_case": "test"})
-    def test_response_has_all_expected_keys(self, mock_config, mock_workflow):
+    @patch(
+        f"{MODULE}.load_config",
+        return_value={"use_case": "test", "model": {"provider": "bedrock"}},
+    )
+    def test_response_has_all_expected_keys(self, mock_config, mock_workflow, mock_index):
         resp = client.post("/evaluate", json={"config_path": "test.yaml"})
         body = resp.json()
         expected_keys = {
-            "score",
-            "decision",
+            "run_id",
+            "model_under_test",
             "total_claims",
             "supported",
-            "unsupported",
             "weakly_supported",
-            "details",
+            "unsupported",
+            "hallucination_risk",
+            "reliability_score",
+            "decision",
+            "claims",
         }
         assert set(body.keys()) == expected_keys
 
@@ -68,18 +83,40 @@ class TestEvaluate:
         assert resp.status_code == 404
         assert "not found" in resp.json()["detail"]
 
+    @patch(f"{MODULE}.index_doc")
     @patch(f"{MODULE}.run_workflow", side_effect=_setup_workflow_side_effect)
-    @patch(f"{MODULE}.load_config", return_value={"use_case": "test"})
-    def test_config_path_passed_through(self, mock_config, mock_workflow):
+    @patch(
+        f"{MODULE}.load_config",
+        return_value={"use_case": "test", "model": {"provider": "bedrock"}},
+    )
+    def test_config_path_passed_through(self, mock_config, mock_workflow, mock_index):
         client.post("/evaluate", json={"config_path": "/my/config.yaml"})
         mock_config.assert_called_once_with("/my/config.yaml")
 
+    @patch(f"{MODULE}.index_doc")
     @patch(f"{MODULE}.run_workflow", side_effect=_setup_workflow_side_effect)
-    @patch(f"{MODULE}.load_config", return_value={"use_case": "test"})
-    def test_none_config_path_with_empty_body(self, mock_config, mock_workflow):
+    @patch(
+        f"{MODULE}.load_config",
+        return_value={"use_case": "test", "model": {"provider": "bedrock"}},
+    )
+    def test_none_config_path_with_empty_body(self, mock_config, mock_workflow, mock_index):
         resp = client.post("/evaluate", json={})
         assert resp.status_code == 200
         mock_config.assert_called_once_with(None)
+
+    @patch(f"{MODULE}.index_doc")
+    @patch(f"{MODULE}.run_workflow", side_effect=_setup_workflow_side_effect)
+    @patch(
+        f"{MODULE}.load_config",
+        return_value={"use_case": "test", "model": {"provider": "bedrock"}},
+    )
+    def test_persists_result_to_elasticsearch(self, mock_config, mock_workflow, mock_index):
+        resp = client.post("/evaluate", json={})
+        assert resp.status_code == 200
+        mock_index.assert_called_once()
+        call_args = mock_index.call_args
+        assert call_args[0][0] == "runs"
+        assert call_args[0][1] == resp.json()["run_id"]
 
 
 class TestHealth:

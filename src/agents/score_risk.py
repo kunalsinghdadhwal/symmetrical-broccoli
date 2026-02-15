@@ -1,33 +1,30 @@
-"""score_risk -- compute weighted risk score from claim verdicts."""
+"""score_risk -- compute hallucination risk score from claim verdicts."""
 
 
 def score_risk(state: dict) -> None:
     """Read verdicts, compute risk score, write decision to state."""
     verdicts = state["verdicts"]
-    thresholds = state["config"]["thresholds"]
+    threshold = state["config"]["thresholds"]["reject"]
 
     total = len(verdicts)
 
     if total == 0:
-        risk = 0.0
+        hallucination_risk = 0.0
         unsupported_count = 0
         weakly_count = 0
         supported_count = 0
     else:
-        unsupported_count = sum(1 for v in verdicts if v["label"] == "unsupported")
-        weakly_count = sum(1 for v in verdicts if v["label"] == "weakly_supported")
+        unsupported_count = sum(1 for v in verdicts if v["verdict"] == "unsupported")
+        weakly_count = sum(1 for v in verdicts if v["verdict"] == "weakly_supported")
         supported_count = total - unsupported_count - weakly_count
-        risk = (unsupported_count * 1.0 + weakly_count * 0.5) / total
+        hallucination_risk = unsupported_count / total
 
-    if risk <= thresholds["deploy"]:
-        decision = "deploy"
-    elif risk <= thresholds["warn"]:
-        decision = "warn"
-    else:
-        decision = "block"
+    reliability_score = 1 - hallucination_risk
+    decision = "approve" if hallucination_risk < threshold else "reject"
 
     state["score"] = {
-        "risk": round(risk, 4),
+        "hallucination_risk": round(hallucination_risk, 4),
+        "reliability_score": round(reliability_score, 4),
         "decision": decision,
         "total_claims": total,
         "supported": supported_count,

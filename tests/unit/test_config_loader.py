@@ -37,7 +37,7 @@ def test_valid_yaml_returns_flattened_thresholds(tmp_path):
     cfg = load_config(path)
 
     assert cfg["use_case"] == "test chatbot"
-    assert cfg["thresholds"] == {"deploy": 0.10, "warn": 0.25}
+    assert cfg["thresholds"] == {"deploy": 0.10, "warn": 0.25, "reject": 0.3}
     assert "risk_tolerance" not in cfg
     assert cfg["model"]["provider"] == "bedrock"
     assert cfg["elasticsearch"]["index"] == "trusted_docs"

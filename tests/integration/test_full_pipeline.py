@@ -28,29 +28,39 @@ class TestFullPipeline:
     def _get_client(self):
         return TestClient(app)
 
+    @patch("src.api.index_doc")
     @patch("src.agents.verify_claims.call_llm", return_value=MOCK_VERIFY_SUPPORTED)
     @patch("src.agents.extract_claims.call_llm", return_value=MOCK_CLAIMS_RESPONSE)
     @patch("src.agents.generate_prompts.call_llm", return_value=MOCK_PROMPTS_RESPONSE)
     def test_evaluate_returns_valid_response(
-        self, mock_gen, mock_extract, mock_verify, ingest_fixtures
+        self, mock_gen, mock_extract, mock_verify, mock_index, ingest_fixtures
     ):
         client = self._get_client()
         resp = client.post("/evaluate", json={"config_path": "tests/fixtures/test_config.yaml"})
         assert resp.status_code == 200
         body = resp.json()
-        assert body["decision"] in ("deploy", "warn", "block")
+        assert body["decision"] in ("approve", "reject")
         assert body["total_claims"] > 0
-        assert len(body["details"]) > 0
+        assert len(body["claims"]) > 0
+        assert "run_id" in body
+        assert "model_under_test" in body
+        assert "hallucination_risk" in body
+        assert "reliability_score" in body
 
+    @patch("src.api.index_doc")
     @patch("src.agents.verify_claims.call_llm", return_value=MOCK_VERIFY_SUPPORTED)
     @patch("src.agents.extract_claims.call_llm", return_value=MOCK_CLAIMS_RESPONSE)
     @patch("src.agents.generate_prompts.call_llm", return_value="1. What is the return policy?")
-    def test_score_is_valid_float(self, mock_gen, mock_extract, mock_verify, ingest_fixtures):
+    def test_hallucination_risk_is_valid_float(
+        self, mock_gen, mock_extract, mock_verify, mock_index, ingest_fixtures
+    ):
         client = self._get_client()
         resp = client.post("/evaluate", json={"config_path": "tests/fixtures/test_config.yaml"})
         body = resp.json()
-        assert isinstance(body["score"], float)
-        assert 0.0 <= body["score"] <= 1.0
+        assert isinstance(body["hallucination_risk"], float)
+        assert 0.0 <= body["hallucination_risk"] <= 1.0
+        assert isinstance(body["reliability_score"], float)
+        assert 0.0 <= body["reliability_score"] <= 1.0
 
     def test_health_endpoint(self):
         client = self._get_client()

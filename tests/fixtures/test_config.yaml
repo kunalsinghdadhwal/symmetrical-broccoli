@@ -2,6 +2,7 @@ use_case: "integration test"
 risk_tolerance:
   deploy_threshold: 0.10
   warn_threshold: 0.30
+  reject_threshold: 0.30
 evaluation:
   num_prompts: 5
   prompt_categories: [factual_recall]

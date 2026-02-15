@@ -60,6 +60,7 @@ def load_config(path: str | None = None) -> dict:
     result["thresholds"] = {
         "deploy": rt["deploy_threshold"],
         "warn": rt["warn_threshold"],
+        "reject": rt.get("reject_threshold", 0.3),
     }
 
     return result

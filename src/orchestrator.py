@@ -1,6 +1,7 @@
 """Workflow orchestrator -- wires all agents into a sequential pipeline."""
 
 import logging
+from uuid import uuid4
 
 from src.agents.extract_claims import extract_claims
 from src.agents.generate_prompts import generate_prompts
@@ -37,11 +38,14 @@ def build_response(state: dict) -> dict:
     """Extract a clean response dict from the final state."""
     score = state["score"]
     return {
-        "score": score["risk"],
-        "decision": score["decision"],
+        "run_id": str(uuid4()),
+        "model_under_test": state["config"]["model"]["provider"],
         "total_claims": score["total_claims"],
         "supported": score["supported"],
-        "unsupported": score["unsupported"],
         "weakly_supported": score["weakly_supported"],
-        "details": state.get("verdicts", []),
+        "unsupported": score["unsupported"],
+        "hallucination_risk": score["hallucination_risk"],
+        "reliability_score": score["reliability_score"],
+        "decision": score["decision"],
+        "claims": state.get("verdicts", []),
     }

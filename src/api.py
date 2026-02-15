@@ -1,7 +1,6 @@
 """FastAPI backend for the LLM Reliability Gate."""
 
 import logging
-from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -10,6 +9,7 @@ from scalar_fastapi import get_scalar_api_reference
 
 from src.config.loader import load_config
 from src.orchestrator import build_response, run_workflow
+from src.wrappers.elasticsearch_helper import index_doc
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +29,16 @@ class EvaluateRequest(BaseModel):
 
 
 class EvaluateResponse(BaseModel):
-    score: float
-    decision: str
+    run_id: str
+    model_under_test: str
     total_claims: int
     supported: int
-    unsupported: int
     weakly_supported: int
-    details: list[dict]
+    unsupported: int
+    hallucination_risk: float
+    reliability_score: float
+    decision: str
+    claims: list[dict]
 
 
 @app.exception_handler(ValueError)
@@ -50,15 +53,15 @@ async def file_not_found_handler(request: Request, exc: FileNotFoundError) -> JS
 
 @app.post("/evaluate", response_model=EvaluateResponse)
 async def evaluate(request: EvaluateRequest) -> EvaluateResponse:
-    request_id = str(uuid4())
-    logger.info("request_id=%s Starting evaluation", request_id)
-
     config = load_config(request.config_path)
     state = {"config": config}
     run_workflow(state)
     result = build_response(state)
 
-    logger.info("request_id=%s Evaluation complete, decision=%s", request_id, result["decision"])
+    logger.info("run_id=%s Evaluation complete, decision=%s", result["run_id"], result["decision"])
+
+    index_doc("runs", result["run_id"], result)
+
     return EvaluateResponse(**result)
 
 

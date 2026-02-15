@@ -103,30 +103,44 @@ class TestRunWorkflow:
 class TestBuildResponse:
     def test_extracts_correct_fields(self):
         state = {
+            "config": {"model": {"provider": "bedrock"}},
             "score": {
-                "risk": 0.25,
-                "decision": "warn",
+                "hallucination_risk": 0.25,
+                "reliability_score": 0.75,
+                "decision": "approve",
                 "total_claims": 10,
                 "supported": 6,
                 "unsupported": 2,
                 "weakly_supported": 2,
             },
-            "verdicts": [{"claim": "test", "label": "supported", "justification": "ok"}],
+            "verdicts": [
+                {
+                    "claim": "test",
+                    "verdict": "supported",
+                    "evidence_snippet": "ev",
+                    "confidence": 1.0,
+                }
+            ],
         }
         result = build_response(state)
-        assert result["score"] == 0.25
-        assert result["decision"] == "warn"
+        assert result["hallucination_risk"] == 0.25
+        assert result["reliability_score"] == 0.75
+        assert result["decision"] == "approve"
         assert result["total_claims"] == 10
         assert result["supported"] == 6
         assert result["unsupported"] == 2
         assert result["weakly_supported"] == 2
-        assert len(result["details"]) == 1
+        assert result["model_under_test"] == "bedrock"
+        assert "run_id" in result
+        assert len(result["claims"]) == 1
 
     def test_missing_verdicts_handled(self):
         state = {
+            "config": {"model": {"provider": "bedrock"}},
             "score": {
-                "risk": 0.0,
-                "decision": "deploy",
+                "hallucination_risk": 0.0,
+                "reliability_score": 1.0,
+                "decision": "approve",
                 "total_claims": 0,
                 "supported": 0,
                 "unsupported": 0,
@@ -134,13 +148,15 @@ class TestBuildResponse:
             },
         }
         result = build_response(state)
-        assert result["details"] == []
+        assert result["claims"] == []
 
     def test_response_has_all_keys(self):
         state = {
+            "config": {"model": {"provider": "bedrock"}},
             "score": {
-                "risk": 0.5,
-                "decision": "block",
+                "hallucination_risk": 0.5,
+                "reliability_score": 0.5,
+                "decision": "reject",
                 "total_claims": 4,
                 "supported": 1,
                 "unsupported": 2,
@@ -150,12 +166,15 @@ class TestBuildResponse:
         }
         result = build_response(state)
         expected_keys = {
-            "score",
-            "decision",
+            "run_id",
+            "model_under_test",
             "total_claims",
             "supported",
-            "unsupported",
             "weakly_supported",
-            "details",
+            "unsupported",
+            "hallucination_risk",
+            "reliability_score",
+            "decision",
+            "claims",
         }
         assert set(result.keys()) == expected_keys

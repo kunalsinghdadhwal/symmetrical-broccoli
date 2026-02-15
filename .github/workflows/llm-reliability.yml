@@ -1,14 +1,24 @@
 name: LLM Reliability Gate
 
-on:
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
   evaluate:
     runs-on: ubuntu-latest
+
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+        ports:
+          - 9200:9200
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+        options: >-
+          --health-cmd "curl -f http://localhost:9200/_cluster/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout repository
@@ -28,22 +38,42 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
-          ES_HOST: ${{ secrets.ES_HOST }}
+          ES_HOST: http://localhost:9200
 
       - name: Wait for server startup
-        run: sleep 5
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://localhost:8000/health && break
+            sleep 1
+          done
 
       - name: Call evaluate endpoint
-        run: curl -s -X POST http://localhost:8000/evaluate -H "Content-Type: application/json" -d '{}' -o result.json
+        run: |
+          curl -s -X POST http://localhost:8000/evaluate \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            -o result.json
+          cat result.json
 
-      - name: Gate deployment on decision
+      - name: Decide & Update README
+        run: |
+          RISK=$(jq -r .hallucination_risk result.json)
+          SCORE=$(jq -r .reliability_score result.json)
+          DECISION=$(jq -r .decision result.json)
+          echo "Risk: $RISK | Score: $SCORE | Decision: $DECISION"
+          BADGE="![LLM Reliability](https://img.shields.io/badge/reliability-${SCORE}-$([ \"$DECISION\" = \"approve\" ] && echo \"green\" || echo \"red\"))"
+          sed -i "s|^!\[LLM Reliability\].*|${BADGE}|" README.md || echo "${BADGE}" >> README.md
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || git commit -m "chore: update reliability badge [skip ci]"
+          git push || true
+
+      - name: Fail if rejected
         run: |
           DECISION=$(jq -r .decision result.json)
-          if [ "$DECISION" == "block" ]; then
-            echo "::error::LLM reliability gate BLOCKED deployment"
+          if [ "$DECISION" = "reject" ]; then
+            echo "::error::LLM reliability gate REJECTED deployment (decision=$DECISION)"
             exit 1
-          elif [ "$DECISION" == "warn" ]; then
-            echo "::warning::LLM reliability gate raised warnings"
-          else
-            echo "Clean pass -- proceeding with deploy"
           fi
+          echo "Gate passed with decision: $DECISION"

@@ -61,7 +61,9 @@ class TestVerifyClaims:
         entry = _make_entry("claim A", ["evidence text"])
         state = _make_state([entry])
         verify_claims(state)
-        assert state["verdicts"][0]["label"] == "supported"
+        assert state["verdicts"][0]["verdict"] == "supported"
+        assert state["verdicts"][0]["confidence"] == 1.0
+        assert state["verdicts"][0]["evidence_snippet"] == "evidence text"
 
     @patch("src.agents.verify_claims.call_llm")
     def test_empty_docs_skips_llm(self, mock_llm):
@@ -72,8 +74,9 @@ class TestVerifyClaims:
         state = _make_state([entry])
         verify_claims(state)
         mock_llm.assert_not_called()
-        assert state["verdicts"][0]["label"] == "unsupported"
-        assert state["verdicts"][0]["justification"] == "No evidence documents found."
+        assert state["verdicts"][0]["verdict"] == "unsupported"
+        assert state["verdicts"][0]["evidence_snippet"] == ""
+        assert state["verdicts"][0]["confidence"] == 0.0
 
     @patch("src.agents.verify_claims.call_llm", return_value=SUPPORTED_RESPONSE)
     def test_one_verdict_per_entry(self, mock_llm):
@@ -107,7 +110,8 @@ class TestVerifyClaims:
         entry = _make_entry("claim", ["evidence"])
         state = _make_state([entry])
         verify_claims(state)
-        assert state["verdicts"][0]["label"] == "unsupported"
+        assert state["verdicts"][0]["verdict"] == "unsupported"
+        assert state["verdicts"][0]["confidence"] == 0.0
 
     @patch(
         "src.agents.verify_claims.call_llm",
@@ -120,8 +124,10 @@ class TestVerifyClaims:
         ]
         state = _make_state(entries)
         verify_claims(state)
-        assert state["verdicts"][0]["label"] == "supported"
-        assert state["verdicts"][1]["label"] == "unsupported"
+        assert state["verdicts"][0]["verdict"] == "supported"
+        assert state["verdicts"][0]["confidence"] == 1.0
+        assert state["verdicts"][1]["verdict"] == "unsupported"
+        assert state["verdicts"][1]["confidence"] == 0.0
 
     @patch("src.agents.verify_claims.call_llm", return_value=SUPPORTED_RESPONSE)
     def test_multiple_docs_concatenated(self, mock_llm):
@@ -138,3 +144,27 @@ class TestVerifyClaims:
         verify_claims(state)
         assert state["verdicts"] == []
         mock_llm.assert_not_called()
+
+    @patch("src.agents.verify_claims.call_llm", return_value=SUPPORTED_RESPONSE)
+    def test_evidence_snippet_truncated_to_200_chars(self, mock_llm):
+        long_content = "x" * 500
+        entry = _make_entry("claim", [long_content])
+        state = _make_state([entry])
+        verify_claims(state)
+        assert len(state["verdicts"][0]["evidence_snippet"]) == 200
+
+    @patch("src.agents.verify_claims.call_llm", return_value=WEAKLY_RESPONSE)
+    def test_weakly_supported_confidence(self, mock_llm):
+        entry = _make_entry("claim", ["evidence"])
+        state = _make_state([entry])
+        verify_claims(state)
+        assert state["verdicts"][0]["verdict"] == "weakly_supported"
+        assert state["verdicts"][0]["confidence"] == 0.5
+
+    @patch("src.agents.verify_claims.call_llm", return_value=SUPPORTED_RESPONSE)
+    def test_verdict_keys(self, mock_llm):
+        entry = _make_entry("claim", ["evidence"])
+        state = _make_state([entry])
+        verify_claims(state)
+        expected_keys = {"claim", "verdict", "evidence_snippet", "confidence"}
+        assert set(state["verdicts"][0].keys()) == expected_keys

@@ -7,30 +7,40 @@ import boto3
 
 _client = boto3.client(
     "bedrock-runtime",
-    region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
+    region_name=os.environ.get("AWS_REGION", "us-east-1"),
 )
 
 
 def call_llm(prompt: str, system: str = "") -> str:
-    """Call Claude via the Converse API and return the assistant text."""
-    model_id = os.environ.get("BEDROCK_MODEL_ID", "anthropic.claude-3-sonnet-20240229-v1:0")
+    """Call Claude via invoke_model and return the assistant text."""
+    model_id = os.environ.get(
+        "BEDROCK_INFERENCE_PROFILE_ID", "anthropic.claude-3-sonnet-20240229-v1:0"
+    )
 
-    kwargs: dict = {
-        "modelId": model_id,
-        "messages": [{"role": "user", "content": [{"text": prompt}]}],
-        "inferenceConfig": {"maxTokens": 4096, "temperature": 0.0},
+    body: dict = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 4096,
+        "temperature": 0,
     }
 
     if system:
-        kwargs["system"] = [{"text": system}]
+        body["system"] = system
 
-    response = _client.converse(**kwargs)
-    return response["output"]["message"]["content"][0]["text"]  # type: ignore[no-any-return]
+    response = _client.invoke_model(
+        modelId=model_id,
+        body=json.dumps(body),
+        contentType="application/json",
+        accept="application/json",
+    )
+
+    result = json.loads(response["body"].read())
+    return result["content"][0]["text"]  # type: ignore[no-any-return]
 
 
 def embed(text: str) -> list[float]:
     """Generate an embedding vector via Titan."""
-    model_id = os.environ.get("TITAN_MODEL_ID", "amazon.titan-embed-text-v2:0")
+    model_id = os.environ.get("BEDROCK_EMBEDDING_MODEL_ID", "amazon.titan-embed-text-v2:0")
 
     response = _client.invoke_model(
         modelId=model_id,
